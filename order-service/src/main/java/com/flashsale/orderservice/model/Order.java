@@ -3,6 +3,8 @@ package com.flashsale.orderservice.model;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "orders")
@@ -12,40 +14,39 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "product_id", nullable = false)
-    private Long productId;
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
 
-    @Column(nullable = false)
-    private Integer quantity;
-
-    @Column(name = "total_price", nullable = false, precision = 10, scale = 2)
-    private BigDecimal totalPrice;
-
-    @Column(name = "order_status", nullable = false, length = 50)
-    private String orderStatus = "COMPLETED";
+    @Column(name = "grand_total", nullable = false, precision = 10, scale = 2)
+    private BigDecimal grandTotal;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<OrderItem> items = new ArrayList<>();
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = Instant.now();
-        if (this.orderStatus == null) {
-            this.orderStatus = "COMPLETED";
-        }
     }
 
     // Constructors
     public Order() {
     }
 
-    public Order(Long id, Long productId, Integer quantity, BigDecimal totalPrice, String orderStatus, Instant createdAt) {
+    public Order(Long id, Long userId, BigDecimal grandTotal, Instant createdAt, List<OrderItem> items) {
         this.id = id;
-        this.productId = productId;
-        this.quantity = quantity;
-        this.totalPrice = totalPrice;
-        this.orderStatus = orderStatus;
+        this.userId = userId;
+        this.grandTotal = grandTotal;
         this.createdAt = createdAt;
+        this.items = items != null ? items : new ArrayList<>();
+    }
+
+    // Helper method to add item and set bidirectional link
+    public void addItem(OrderItem item) {
+        items.add(item);
+        item.setOrder(this);
     }
 
     // Getters and Setters
@@ -57,36 +58,20 @@ public class Order {
         this.id = id;
     }
 
-    public Long getProductId() {
-        return productId;
+    public Long getUserId() {
+        return userId;
     }
 
-    public void setProductId(Long productId) {
-        this.productId = productId;
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 
-    public Integer getQuantity() {
-        return quantity;
+    public BigDecimal getGrandTotal() {
+        return grandTotal;
     }
 
-    public void setQuantity(Integer quantity) {
-        this.quantity = quantity;
-    }
-
-    public BigDecimal getTotalPrice() {
-        return totalPrice;
-    }
-
-    public void setTotalPrice(BigDecimal totalPrice) {
-        this.totalPrice = totalPrice;
-    }
-
-    public String getOrderStatus() {
-        return orderStatus;
-    }
-
-    public void setOrderStatus(String orderStatus) {
-        this.orderStatus = orderStatus;
+    public void setGrandTotal(BigDecimal grandTotal) {
+        this.grandTotal = grandTotal;
     }
 
     public Instant getCreatedAt() {
@@ -95,5 +80,13 @@ public class Order {
 
     public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public List<OrderItem> getItems() {
+        return items;
+    }
+
+    public void setItems(List<OrderItem> items) {
+        this.items = items;
     }
 }

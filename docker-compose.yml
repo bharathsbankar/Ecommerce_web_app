@@ -2,6 +2,50 @@ version: '3.8'
 
 services:
   # =========================================================================
+  # AUTH DATABASE LAYER (auth_net)
+  # =========================================================================
+  auth-db:
+    image: mysql:8.0
+    container_name: auth-db
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: auth_db
+    volumes:
+      - ./auth-db-init:/docker-entrypoint-initdb.d
+    networks:
+      - auth_net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Adminer Web GUI for Auth Database
+  authDB_GUI:
+    image: adminer:latest
+    container_name: authDB_GUI
+    ports:
+      - "8085:8080"
+    networks:
+      - auth_net
+    depends_on:
+      - auth-db
+
+  # =========================================================================
+  # CART DATABASE LAYER (cart_net)
+  # =========================================================================
+  cart-db:
+    image: redis:7-alpine
+    container_name: cart-db
+    networks:
+      - cart_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # =========================================================================
   # CATALOG DATABASE LAYER (catalog_net)
   # =========================================================================
   catalog-db:
@@ -14,7 +58,6 @@ services:
       - ./catalog-db-init:/docker-entrypoint-initdb.d
     networks:
       - catalog_net
-    # Port 3306 is NOT mapped to the host (stays private to catalog_net)
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
       interval: 5s
@@ -43,7 +86,6 @@ services:
       MYSQL_DATABASE: order_db
     networks:
       - order_net
-    # Port 3306 is NOT mapped to the host (stays private to order_net)
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
       interval: 5s
@@ -62,73 +104,150 @@ services:
       - order-db
 
   # =========================================================================
-  # CATALOG SERVICE (catalog_net, api_net)
+  # AUTH MICROSERVICE (auth_net, app_net)
+  # =========================================================================
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    container_name: auth-service
+    environment:
+      - DB_HOST=auth-db
+      - DB_PORT=3306
+      - DB_NAME=auth_db
+      - DB_USER=root
+      - DB_PASSWORD=rootpassword
+      - JWT_SECRET=supersecretflashsaledealskey999
+      - DJANGO_SECRET_KEY=django-secure-production-random-key
+      - DJANGO_DEBUG=False
+    networks:
+      - auth_net
+      - app_net
+    depends_on:
+      auth-db:
+        condition: service_healthy
+
+  # =========================================================================
+  # CART MICROSERVICE (cart_net, app_net)
+  # =========================================================================
+  cart-service:
+    build:
+      context: ./cart-service
+      dockerfile: Dockerfile
+    container_name: cart-service
+    environment:
+      - PORT=5001
+      - REDIS_HOST=cart-db
+      - REDIS_PORT=6379
+    networks:
+      - cart_net
+      - app_net
+    depends_on:
+      cart-db:
+        condition: service_healthy
+
+  # =========================================================================
+  # CATALOG MICROSERVICE (catalog_net, app_net)
   # =========================================================================
   catalog-service:
     build:
       context: ./catalog-service
       dockerfile: Dockerfile
     container_name: catalog-service
-    
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://catalog-db:3306/catalog_db?createDatabaseIfNotExist=true
+      - SERVER_PORT=8081
+      - SPRING_DATASOURCE_URL=jdbc:mysql://catalog-db:3306/catalog_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=rootpassword
+      - CART_SERVICE_URL=http://cart-service:5001
     networks:
       - catalog_net
-      - api_net
+      - app_net
     depends_on:
       catalog-db:
         condition: service_healthy
+      cart-service:
+        condition: service_started
 
   # =========================================================================
-  # ORDER SERVICE (order_net, api_net)
+  # ORDER MICROSERVICE (order_net, app_net)
   # =========================================================================
   order-service:
     build:
       context: ./order-service
       dockerfile: Dockerfile
     container_name: order-service
-    
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://order-db:3306/order_db?createDatabaseIfNotExist=true
+      - SERVER_PORT=8082
+      - SPRING_DATASOURCE_URL=jdbc:mysql://order-db:3306/order_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=rootpassword
+      - CATALOG_SERVICE_URL=http://catalog-service:8081
+      - CART_SERVICE_URL=http://cart-service:5001
     networks:
       - order_net
-      - api_net
+      - app_net
     depends_on:
       order-db:
         condition: service_healthy
       catalog-service:
         condition: service_started
+      cart-service:
+        condition: service_started
 
   # =========================================================================
-  # WEB FRONTEND (api_net)
+  # KRAKEND API GATEWAY (app_net)
   # =========================================================================
-  web-frontend:
-    build:
-      context: ./web-frontend
-      dockerfile: Dockerfile
-    container_name: web-frontend
+  krakend-gateway:
+    image: krakend:latest
+    container_name: krakend-gateway
     ports:
-      - "5000:5000"
+      - "8080:8080"
+    environment:
+      - FC_ENABLE=1
+      - JWT_SECRET=supersecretflashsaledealskey999
+    volumes:
+      - ./krakend:/etc/krakend
     networks:
-      - api_net
+      - app_net
     depends_on:
+      - auth-service
+      - cart-service
       - catalog-service
       - order-service
+
+  # =========================================================================
+  # REACT WEB APP (No internal network, communicates via KrakenD gateway host port)
+  # =========================================================================
+  webapp:
+    build:
+      context: ./webapp
+      dockerfile: Dockerfile
+    container_name: webapp
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+    # Isolated from app_net, communicates only via host mapping
+    depends_on:
+      - krakend-gateway
 
 # ===========================================================================
 # NETWORKS DEFINITION
 # ===========================================================================
 networks:
+  auth_net:
+    driver: bridge
+    name: auth_net
+  cart_net:
+    driver: bridge
+    name: cart_net
   catalog_net:
     driver: bridge
     name: catalog_net
   order_net:
     driver: bridge
     name: order_net
-  api_net:
+  app_net:
     driver: bridge
-    name: api_net
+    name: app_net

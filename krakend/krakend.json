@@ -1,0 +1,317 @@
+{
+  "version": 3,
+  "port": 8080,
+  "timeout": "10000ms",
+  "cache_ttl": "300s",
+  "name": "FlashSale API Gateway",
+  "extra_config": {
+    "security/cors": {
+      "allow_origins": ["*"],
+      "allow_methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      "allow_headers": ["Origin", "Authorization", "Content-Type", "X-User-Id", "X-User-Role"],
+      "expose_headers": ["Content-Length"],
+      "max_age": "12h"
+    },
+    "router": {
+      "auto_options": true
+    }
+  },
+  "endpoints": [
+    {
+      "endpoint": "/api/auth/register",
+      "method": "POST",
+      "output_encoding": "no-op",
+      "input_headers": ["*"],
+      "backend": [
+        {
+          "url_pattern": "/api/auth/register",
+          "encoding": "no-op",
+          "host": ["http://auth-service:8000"],
+          "method": "POST"
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/auth/login",
+      "method": "POST",
+      "output_encoding": "no-op",
+      "input_headers": ["*"],
+      "backend": [
+        {
+          "url_pattern": "/api/auth/login",
+          "encoding": "no-op",
+          "host": ["http://auth-service:8000"],
+          "method": "POST"
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/products",
+      "method": "GET",
+      "output_encoding": "no-op",
+      "input_headers": ["*"],
+      "backend": [
+        {
+          "url_pattern": "/api/products",
+          "encoding": "no-op",
+          "host": ["http://catalog-service:8081"],
+          "method": "GET"
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/products/{id}",
+      "method": "GET",
+      "output_encoding": "no-op",
+      "input_headers": ["*"],
+      "backend": [
+        {
+          "url_pattern": "/api/products/{id}",
+          "encoding": "no-op",
+          "host": ["http://catalog-service:8081"],
+          "method": "GET"
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/products",
+      "method": "POST",
+      "output_encoding": "no-op",
+      "input_headers": ["*"],
+      "extra_config": {
+        "auth/validator": {
+          "alg": "HS256",
+          "jwk_local_path": "/etc/krakend/symmetric.json",
+          "disable_jwk_security": true,
+          "roles_key": "role",
+          "roles": ["admin"],
+          "propagate_claims": [
+            ["user_id", "X-User-Id"],
+            ["email", "X-User-Email"],
+            ["role", "X-User-Role"]
+          ]
+        }
+      },
+      "backend": [
+        {
+          "url_pattern": "/api/products",
+          "encoding": "no-op",
+          "host": ["http://catalog-service:8081"],
+          "method": "POST"
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/products/{id}",
+      "method": "PUT",
+      "output_encoding": "no-op",
+      "input_headers": ["*"],
+      "extra_config": {
+        "auth/validator": {
+          "alg": "HS256",
+          "jwk_local_path": "/etc/krakend/symmetric.json",
+          "disable_jwk_security": true,
+          "roles_key": "role",
+          "roles": ["admin"],
+          "propagate_claims": [
+            ["user_id", "X-User-Id"],
+            ["email", "X-User-Email"],
+            ["role", "X-User-Role"]
+          ]
+        }
+      },
+      "backend": [
+        {
+          "url_pattern": "/api/products/{id}",
+          "encoding": "no-op",
+          "host": ["http://catalog-service:8081"],
+          "method": "PUT"
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/products/{id}",
+      "method": "DELETE",
+      "output_encoding": "no-op",
+      "input_headers": ["*"],
+      "extra_config": {
+        "auth/validator": {
+          "alg": "HS256",
+          "jwk_local_path": "/etc/krakend/symmetric.json",
+          "disable_jwk_security": true,
+          "roles_key": "role",
+          "roles": ["admin"],
+          "propagate_claims": [
+            ["user_id", "X-User-Id"],
+            ["email", "X-User-Email"],
+            ["role", "X-User-Role"]
+          ]
+        }
+      },
+      "backend": [
+        {
+          "url_pattern": "/api/products/{id}",
+          "encoding": "no-op",
+          "host": ["http://catalog-service:8081"],
+          "method": "DELETE"
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/cart",
+      "method": "GET",
+      "output_encoding": "no-op",
+      "input_headers": ["*"],
+      "extra_config": {
+        "auth/validator": {
+          "alg": "HS256",
+          "jwk_local_path": "/etc/krakend/symmetric.json",
+          "disable_jwk_security": true,
+          "propagate_claims": [
+            ["user_id", "X-User-Id"],
+            ["email", "X-User-Email"],
+            ["role", "X-User-Role"]
+          ]
+        }
+      },
+      "backend": [
+        {
+          "url_pattern": "/api/cart",
+          "encoding": "no-op",
+          "host": ["http://cart-service:5001"],
+          "method": "GET"
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/cart",
+      "method": "POST",
+      "output_encoding": "no-op",
+      "input_headers": ["*"],
+      "extra_config": {
+        "auth/validator": {
+          "alg": "HS256",
+          "jwk_local_path": "/etc/krakend/symmetric.json",
+          "disable_jwk_security": true,
+          "propagate_claims": [
+            ["user_id", "X-User-Id"],
+            ["email", "X-User-Email"],
+            ["role", "X-User-Role"]
+          ]
+        }
+      },
+      "backend": [
+        {
+          "url_pattern": "/api/cart",
+          "encoding": "no-op",
+          "host": ["http://cart-service:5001"],
+          "method": "POST"
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/cart",
+      "method": "DELETE",
+      "output_encoding": "no-op",
+      "input_headers": ["*"],
+      "extra_config": {
+        "auth/validator": {
+          "alg": "HS256",
+          "jwk_local_path": "/etc/krakend/symmetric.json",
+          "disable_jwk_security": true,
+          "propagate_claims": [
+            ["user_id", "X-User-Id"],
+            ["email", "X-User-Email"],
+            ["role", "X-User-Role"]
+          ]
+        }
+      },
+      "backend": [
+        {
+          "url_pattern": "/api/cart",
+          "encoding": "no-op",
+          "host": ["http://cart-service:5001"],
+          "method": "DELETE"
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/cart/{productId}",
+      "method": "DELETE",
+      "output_encoding": "no-op",
+      "input_headers": ["*"],
+      "extra_config": {
+        "auth/validator": {
+          "alg": "HS256",
+          "jwk_local_path": "/etc/krakend/symmetric.json",
+          "disable_jwk_security": true,
+          "propagate_claims": [
+            ["user_id", "X-User-Id"],
+            ["email", "X-User-Email"],
+            ["role", "X-User-Role"]
+          ]
+        }
+      },
+      "backend": [
+        {
+          "url_pattern": "/api/cart/{productId}",
+          "encoding": "no-op",
+          "host": ["http://cart-service:5001"],
+          "method": "DELETE"
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/orders/checkout",
+      "method": "POST",
+      "output_encoding": "no-op",
+      "input_headers": ["*"],
+      "extra_config": {
+        "auth/validator": {
+          "alg": "HS256",
+          "jwk_local_path": "/etc/krakend/symmetric.json",
+          "disable_jwk_security": true,
+          "propagate_claims": [
+            ["user_id", "X-User-Id"],
+            ["email", "X-User-Email"],
+            ["role", "X-User-Role"]
+          ]
+        }
+      },
+      "backend": [
+        {
+          "url_pattern": "/api/orders/checkout",
+          "encoding": "no-op",
+          "host": ["http://order-service:8082"],
+          "method": "POST"
+        }
+      ]
+    },
+    {
+      "endpoint": "/api/orders/history",
+      "method": "GET",
+      "output_encoding": "no-op",
+      "input_headers": ["*"],
+      "extra_config": {
+        "auth/validator": {
+          "alg": "HS256",
+          "jwk_local_path": "/etc/krakend/symmetric.json",
+          "disable_jwk_security": true,
+          "propagate_claims": [
+            ["user_id", "X-User-Id"],
+            ["email", "X-User-Email"],
+            ["role", "X-User-Role"]
+          ]
+        }
+      },
+      "backend": [
+        {
+          "url_pattern": "/api/orders/history",
+          "encoding": "no-op",
+          "host": ["http://order-service:8082"],
+          "method": "GET"
+        }
+      ]
+    }
+  ]
+}

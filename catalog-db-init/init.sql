@@ -9,6 +9,6 @@ CREATE TABLE IF NOT EXISTS products (
 
 -- Seed initial products for the Flash Sale
 INSERT INTO products (name, description, price, stock_quantity) VALUES
-('iPhone 15 Pro', '128GB, Blue Titanium', 999.00, 5),
-('Sony WH-1000XM5', 'Wireless Noise Canceling Headphones', 349.99, 2),
-('Mechanical Keyboard', 'RGB Linear Switches', 120.00, 0);
+('iPhone 15 Pro', '128GB, Blue Titanium', 134900.00, 10),
+('Sony WH-1000XM5', 'Wireless Noise Canceling Headphones', 29990.00, 5),
+('Mechanical Keyboard', 'RGB Linear Switches', 9500.00, 15);
