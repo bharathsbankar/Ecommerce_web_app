@@ -74,7 +74,7 @@ def login_view(request):
         payload = {
             'user_id': user.id,
             'email': user.email,
-            'role': user.role,
+            'role': [user.role],
             'exp': datetime.utcnow() + timedelta(hours=24)
         }
         token = jwt.encode(payload, JWT_SECRET, algorithm='HS256', headers={'kid': 'flashsale-key-id'})

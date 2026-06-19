@@ -8,8 +8,8 @@ CREATE TABLE IF NOT EXISTS users (
     INDEX idx_email (email)
 );
 
--- Seed initial admin user: admin@gmail.com / qwerty
--- The hash is Django bcrypt format: bcrypt$$2b$12$D2Mee1k33j06/kF4V0L87.oV5c2W/yYJk.HuxYlI7L27hCugC0M9W
+-- Seed initial admin user: admin@gmail.com / admin
+-- The hash is Django bcrypt format for 'admin': bcrypt_sha256$$2b$12$Hym1qKVJBQUMeCzMqSWJHO.bmOKDbCngUBarigs0B38ymG.8A8n7a
 INSERT INTO users (email, username, password, role) VALUES
-('admin@gmail.com', 'admin', 'bcrypt$$2b$12$D2Mee1k33j06/kF4V0L87.oV5c2W/yYJk.HuxYlI7L27hCugC0M9W', 'admin')
-ON DUPLICATE KEY UPDATE id=id;
+('admin@gmail.com', 'admin', 'bcrypt_sha256$$2b$12$Hym1qKVJBQUMeCzMqSWJHO.bmOKDbCngUBarigs0B38ymG.8A8n7a', 'admin')
+ON DUPLICATE KEY UPDATE password='bcrypt_sha256$$2b$12$Hym1qKVJBQUMeCzMqSWJHO.bmOKDbCngUBarigs0B38ymG.8A8n7a', role='admin';
