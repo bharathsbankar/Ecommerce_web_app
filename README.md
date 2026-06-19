@@ -16,27 +16,27 @@ The platform separates microservice concerns into five isolated Docker bridge ne
 5. `app_net`: Central API gateway and microservice internal communication subnet.
 
 ```
-                          ┌────────────────────────┐
-                          │  Client Browser (Host) │
-                          └───────────┬────────────┘
-               Port 3000              │ Port 8080 (API Ingress)
-               (Web App)              ▼
-                          ====================== app_net ======================
-                          │           krakend-gateway (KrakenD)               │
-                          │                     │                             │
-                          ├──────────────┬──────┴───────┬──────────────┐      │
-                          ▼              ▼              ▼              ▼      │
-                    ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌──────────┐ │
-                    │auth-service│ │cart-service│ │catalog-svc │ │order-svc │ │
-                    │  (Django)  │ │ (Node.js)  │ │(SpringBoot)│ │(SpringB.)│ │
-                    └─────┬──────┘ └─────┬──────┘ └─────┬──────┘ └─────┬────┘ │
-                          │              │              │              │      │
-     =====================│==============│==============│==============│=======
-        auth_net          ▼    cart_net  ▼  catalog_net ▼    order_net ▼
-                    ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌──────────┐
-                    │  auth-db   │ │  cart-db   │ │ catalog-db │ │ order-db │
-                    │  (MySQL)   │ │  (Redis)   │ │  (MySQL)   │ │ (MySQL)  │
-                    └────────────┘ └────────────┘ └────────────┘ └──────────┘
+                         ┌────────────────────────┐    ┌────────────────────────┐
+                         │  Client Browser (Host) │    │  Mobile Client (Phone) │
+                         └───────────┬────────────┘    └───────────┬────────────┘
+             Port 3000 (Web App)     │                             │ Port 8080 (API Ingress)
+             or Port 8080 (API Ingr) ▼                             ▼
+                         ====================== app_net ======================
+                         │           krakend-gateway (KrakenD)               │
+                         │                     │                             │
+                         ├──────────────┬──────┴───────┬──────────────┐      │
+                         ▼              ▼              ▼              ▼      │
+                   ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌──────────┐ │
+                   │auth-service│ │cart-service│ │catalog-svc │ │order-svc │ │
+                   │  (Django)  │ │ (Node.js)  │ │(SpringBoot)│ │(SpringB.)│ │
+                   └─────┬──────┘ └─────┬──────┘ └─────┬──────┘ └─────┬────┘ │
+                         │              │              │              │      │
+    =====================│==============│==============│==============│=======
+       auth_net          ▼    cart_net  ▼  catalog_net ▼    order_net ▼
+                   ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌──────────┐
+                   │  auth-db   │ │  cart-db   │ │ catalog-db │ │ order-db │
+                   │  (MySQL)   │ │  (Redis)   │ │  (MySQL)   │ │ (MySQL)  │
+                   └────────────┘ └────────────┘ └────────────┘ └──────────┘
 ```
 
 ---
