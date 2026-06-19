@@ -59,6 +59,15 @@ The project is structured as a multi-directory monorepo containing five primary 
 * **Persistence Layer**: Spring Data JPA + Hibernate
 * **Remote Clients**: Spring Cloud OpenFeign 2023.0.1 (`spring-cloud-starter-openfeign`) for declarative HTTP calls targeting `catalog-service` and `cart-service`
 
+### Mobile Application Client (`mobile_app/`)
+* **Runtime**: Flutter SDK (v3.29.3) & Dart
+* **State Management**: Flutter Riverpod (`^2.5.1`) + StateNotifier
+* **Navigation**: GoRouter (`^14.0.0`)
+* **Http Client**: Dio (`^5.4.0`)
+* **Secure Storage**: Flutter Secure Storage (`^9.0.0`) for JWT token and user persistence
+* **Local Storage**: Shared Preferences (`^2.2.0`) for developer runtime IP settings
+* **UI Icons**: Lucide Icons (`^0.378.0`)
+
 ### Database & Administration Layers
 * **Database Engines**: 
   - MySQL 8.0: Three distinct, isolated containers (`auth-db`, `catalog-db`, and `order-db`)
@@ -136,6 +145,15 @@ The platform is segregated across five isolated Docker virtual bridge networks:
         ├── api.js           # Axios client configured with KrakenD base URL & authorization interceptor
         ├── components/      # AdminDashboard, AuthModal, CartPage, Navbar, OrderHistoryPage, StorePage
         └── context/         # AuthContext state provider
+├── mobile_app/              # Flutter Mobile Client Application
+│   ├── android/             # Android configurations (includes network security specs for local cleartext HTTP)
+│   ├── ios/                 # iOS project configuration files
+│   ├── lib/                 # Core Flutter sources (Feature-First architecture)
+│   │   ├── core/            # App theme, secure storage utilities, Dio configuration, custom exception failures
+│   │   ├── features/        # Feature modules: auth, catalog, cart, orders, admin, dev_settings
+│   │   └── main.dart        # Flutter application entry point
+│   ├── test/                # Test suite containing mock storage & unit verification tests
+│   └── pubspec.yaml         # Project dependency manifest
 ```
 
 ---
@@ -159,6 +177,8 @@ All components have been fully coded, validated, compiled, and successfully push
   If any stock decrement fails (e.g., due to insufficient stock or parallel rush purchases), the transaction catches the error, triggers compensating HTTP calls to increment back stock for any successfully decremented items in that session, and rolls back the order database state.
 * **Rupees Translation**: Replaced all USD ($) symbols with Indian Rupees (**₹**).
 * **React Single Page App**: Designed a state-of-the-art React web application under `/webapp` with real-time reservation timers, Flipkart layouts, a secure checkout simulation overlay, order history page, and custom administrator CRUD dashboard.
+* **Flutter Mobile App Clone**: Built and validated a production-grade Flutter clone under `/mobile_app` mirroring all React client API requests, secure JWT verification headers, 5-minute cart reservation countdown banner mechanics, saga error handling checkout overlays, and admin inventory CRUD actions.
+* **Hotspot Cleartext & NDK Resolution**: Configured custom Android network security permission files allowing HTTP communication over local Wi-Fi hotspots, and commented out standard Gradle NDK checks to compile on local machines without C++ NDK toolchains.
 
 ---
 
@@ -173,3 +193,5 @@ Any downstream agent or developer editing this codebase must respect the followi
 > 4. **Keep Prices Immutable**: When saving an order, always snap the unit price from the Catalog service via Feign at the exact millisecond of checkout. Never recalculate pricing on-the-fly from the catalog at a later date, as catalog prices will fluctuate.
 > 5. **Gateway Ingress Routing**: The client browser must NEVER communicate directly with internal services. All browser-side AJAX requests must be sent to the KrakenD Gateway (`http://localhost:8080`).
 > 6. **Trust Gateway Claims Propagation**: Do not re-verify JWT signatures inside downstream microservices (`cart-service`, `catalog-service`, `order-service`). Trust and extract the `X-User-Id` and `X-User-Role` headers injected by KrakenD.
+> 7. **Mock Native Storage in Flutter Tests**: When writing widget or unit tests for the Flutter client, always mock platform-specific channels (e.g. `FlutterSecureStorage` or `SharedPreferences`) to prevent test executor failures due to missing binary messenger channels.
+> 8. **Follow Feature-First Directory Layout**: Keep mobile client additions organized by feature module (`mobile_app/lib/features/`). Ensure proper segregation of data repository, domain models, and presentation controllers.
